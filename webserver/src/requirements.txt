@@ -2,4 +2,4 @@ pyramid==1.10
 pyramid-jinja2
 mysql-connector-python
 python-dotenv
-requests==2.18
+requests==2.20.0
