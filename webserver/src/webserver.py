@@ -4,6 +4,12 @@ from pyramid.renderers import render_to_response
 from pyramid.response import FileResponse
 from datetime import datetime
 from dotenv import load_dotenv
+
+from pyramid.httpexceptions import HTTPFound
+
+from pyramid.session import SignedCookieSessionFactory
+
+
 import mysql.connector as mysql
 import requests
 import os
@@ -17,12 +23,62 @@ REST_SERVER = os.environ.get('REST_SERVER')
 #The port is 5001, use that to access the website
 #You should run the init_db once after building and upping the files
 
+load_dotenv('credentials.env')
+db_user = os.environ['MYSQL_USER']
+db_pass = os.environ['MYSQL_PASSWORD']
+db_name = os.environ['MYSQL_DATABASE']
+db_host = os.environ['MYSQL_HOST']
+
+def get_home(req):
+  if 'user' in req.session:
+    log_visit(req,page="home_page")
+    return render_to_response('pages/home_page.html', {'user':req.session['user']})
+  else:
+    return HTTPFound(req.route_url("get_login"))
+
+
+def get_login(req):
+  error = req.session.pop_flash('login_error')
+  error = error[0] if error else ''
+  return render_to_response('pages/login.html', {'error':error})
+
+ 
+
+def post_login(req):
+  email = None
+  password = None
+  if req.method == "POST":
+    email = req.params['email']
+    password = req.params['password']
+
+  # Connect to the database and try to retrieve the user
+  db = mysql.connect(host=db_host, database=db_name, user=db_user, passwd=db_pass)
+  cursor = db.cursor()
+  query = "SELECT email, password FROM Users WHERE email='%s';" % email
+  cursor.execute(query)
+  user = cursor.fetchone() # will return a tuple (email, password) if user is found and None otherwise
+  db.close()
+
+  # If user is found and the password is valid, store in session, and redirect to the homepage
+  # Otherwise, redirect back to the login page with a flash message
+  # Note: passwords should be hashed and encrypted in actual production solutions!
+  if user is not None and user[1] == password:
+    req.session['user'] = user[0] # set the session variable
+    return HTTPFound(req.route_url("get_home"))
+  else:
+    req.session.invalidate() # clear session
+    req.session.flash('Invalid login attempt. Please try again.', 'login_error')
+    return HTTPFound(req.route_url("get_login"))
+
+def login(req):
+  return render_to_response('pages/login.html', {}, request=req)
 
 def convert_to_dict(list):
 
     new_dict = {"Coord1": {"long":list[1], "lat":list[0]}, "Coord2": {"long":list[3], "lat":list[2]}, "Coord3": {"long":list[5], "lat":list[4]}}
     print(new_dict)
-    return new_dict  
+    return new_dict 
+
 
 def convert_to_user_dict(list):
 
@@ -49,6 +105,7 @@ def parse_user_req(req):
 
 
 def home_page(req):
+  log_visit(req,page="home_page")
   return render_to_response('pages/home_page.html', {}, request=req)
 
 def submit_signup(req):
@@ -58,14 +115,10 @@ def submit_signup(req):
   #for User in Users:
   #    if info['email'] == User['email']:
   #        return render_to_response('templates/signup.html', {'message':'Email already registered!'}, request=req)  
-  load_dotenv('credentials.env')
-  db_user = os.environ['MYSQL_USER']
-  db_pass = os.environ['MYSQL_PASSWORD']
-  db_name = os.environ['MYSQL_DATABASE']
-  db_host = os.environ['MYSQL_HOST']
+  
   db = mysql.connect(user=db_user, password=db_pass, host=db_host, database=db_name)
   cursor = db.cursor()
-  query = "insert into Users (first_name, last_name, email) values (%s, %s, %s)"
+  query = "insert into Letters (first_name, last_name, email) values (%s, %s, %s)"
   values = (info['first_name'],info['last_name'],info['email'])
   cursor.execute(query, values)
   db.commit()
@@ -75,22 +128,64 @@ def submit_signup(req):
   return render_to_response('pages/signup.html', {'message':'Registered Email! Look for more info soon'}, request=req)
 
 def signup(req):
-  return render_to_response('pages/signup.html', {}, request=req)
+  if 'user' in req.session:
+    return render_to_response('pages/signup.html', {}, request=req)
+  else:
+    return HTTPFound(req.route_url("get_login"))
+  
 
 def about_us(req):
-  return render_to_response('pages/about_us.html', {}, request=req)
+  if 'user' in req.session:
+    log_visit(req,page="about_us")
+    return render_to_response('pages/about_us.html', {}, request=req)
+  else:
+    return HTTPFound(req.route_url("get_login"))
+  
   
 def product_features(req):
-  return render_to_response('pages/product_features.html', {}, request=req)
+  if 'user' in req.session:
+    log_visit(req,page="product_features")
+    return render_to_response('pages/product_features.html', {}, request=req)
+  else:
+    return HTTPFound(req.route_url("get_login"))
+  
 
 def pricing_model(req):
-  return render_to_response('pages/pricing_model.html', {}, request=req)
+  if 'user' in req.session:
+    return render_to_response('pages/pricing_model.html', {}, request=req)
+  else:
+    return HTTPFound(req.route_url("get_login"))
+  
 
 def planner(req):
-  return render_to_response('pages/planner.html', {}, request=req)
+  if 'user' in req.session:
+    log_visit(req,page="planner")
+    return render_to_response('pages/planner.html', {}, request=req)
+  else:
+    return HTTPFound(req.route_url("get_login"))
+  
 
 def metrics(req):
-  return render_to_response('pages/metrics.html', {}, request=req)
+  if 'user' in req.session:
+    log_visit(req,page="metrics")
+    return render_to_response('pages/metrics.html', {}, request=req)
+  else:
+    return HTTPFound(req.route_url("get_login"))
+
+def admin(req):
+  if 'user' in req.session:
+    return render_to_response('pages/admin.html', {}, request=req)
+  else:
+    return HTTPFound(req.route_url("get_login"))
+  
+def log_visit(req, page):
+  db = mysql.connect(user=db_user, password=db_pass, host=db_host, database=db_name)
+  cursor = db.cursor()
+  query = "insert into visits (session, page) values (%s, %s)"
+  values = (req.session['user'],page)
+  cursor.execute(query, values)
+  db.commit()
+  print("logged a visit")
 
 
 
@@ -103,7 +198,7 @@ def get_progress(req):
   return progress
 
 def get_count(req):
-  cat = get_db("SELECT COUNT(*) FROM Users;")
+  cat = get_db("SELECT COUNT(*) FROM Letters;")
   count = {'count': cat[0]}
   print(count)
 
@@ -119,11 +214,6 @@ def get_news(req):
   return new_dict
 
 def get_db(string_command):
-    load_dotenv('credentials.env')
-    db_user = os.environ['MYSQL_USER']
-    db_pass = os.environ['MYSQL_PASSWORD']
-    db_name = os.environ['MYSQL_DATABASE']
-    db_host = os.environ['MYSQL_HOST']
     db = mysql.connect(user=db_user, password=db_pass, host=db_host, database=db_name)
     cursor = db.cursor()
     cursor.execute(string_command)
@@ -142,11 +232,6 @@ def get_position(req):   #FOR ALI
     return {"lat": 38.575764, "long": -121.478851}
 
 def add_coord_to_sql(info): 
-  load_dotenv('credentials.env')
-  db_user = os.environ['MYSQL_USER']
-  db_pass = os.environ['MYSQL_PASSWORD']
-  db_name = os.environ['MYSQL_DATABASE']
-  db_host = os.environ['MYSQL_HOST']
   db = mysql.connect(user=db_user, password=db_pass, host=db_host, database=db_name)
   cursor = db.cursor()
 
@@ -174,18 +259,38 @@ def launch_command(req):    #FOR ALI, this is what gets called when the user pre
     return {"Status": "Ready", "Trip_time": "CALCULATED TIME", "Battery": "100%"}
 
 def connect(req):     #FOR ALI
-  
   #Insert functions to eventually add this information
     print("Connect function called")
-
     #you can check if its actually ready and return accordingly
     return {"Status": "Ready"}
 
 def disconnect(req): 
-
   return {"This is": "nothing"}
 
-
+def get_analytics(req):
+  cat = get_db("select * from Visits;")
+  print(cat)
+  all_visits = 0
+  total_metrics = 0
+  total_homepage = 0
+  total_planner = 0
+  total_about_us = 0
+  total_features =  0
+  for entry in cat:
+    all_visits = all_visits + 1
+    if entry[2] == "metrics":
+      total_metrics = total_metrics + 1
+    if entry[2] == "home_page":
+      total_homepage = total_homepage + 1
+    if entry[2] == "planner":
+      total_planner = total_planner + 1
+    if entry[2] == "about_us":
+      total_about_us = total_about_us + 1
+    if entry[2] == "product_features":
+      total_features = total_features + 1
+  diction = {"all_visits": all_visits, "total_metrics": total_metrics, "total_homepage": total_homepage, "total_planner": total_planner, "total_about_us": total_about_us, "total_features":total_features}
+  print(diction)
+  return diction
 
 if __name__ == '__main__':
   config = Configurator()
@@ -196,8 +301,22 @@ if __name__ == '__main__':
 ###############################
 
 
-  config.add_route('home_page', '/')
+  config.add_route('get_login', '/')
+  config.add_view(get_login, route_name='get_login')
+
+  config.add_route('post_login', '/post_login')
+  config.add_view(post_login, route_name='post_login')
+
+  config.add_route('get_home', '/home')
+  config.add_view(get_home, route_name='get_home')
+
+##########################################
+
+  config.add_route('home_page', '/home_page')
   config.add_view(home_page, route_name='home_page') #first_page
+
+  config.add_route('login', '/')
+  config.add_view(login, route_name='login') #first_page
 
   config.add_route('submit_signup', '/submit_signup')
   config.add_view(submit_signup, route_name='submit_signup')
@@ -241,9 +360,18 @@ if __name__ == '__main__':
   config.add_route('disconnect', '/disconnect')
   config.add_view(disconnect, route_name='disconnect', renderer="json")
 
+  config.add_route('admin', '/admin')
+  config.add_view(admin, route_name='admin', renderer="json")
+
+  config.add_route('get_analytics', '/get_analytics')
+  config.add_view(get_analytics, route_name='get_analytics', renderer="json")
+
 #           AIzaSyBmdR6qGw3xWKJoqo1LviAVgl50sTcWfBA api key for google maps
 #########################################
 
+
+  session_factory = SignedCookieSessionFactory(os.environ['SESSION_SECRET_KEY'])
+  config.set_session_factory(session_factory)
 
   config.add_static_view(name='/', path='./pages/CSS', cache_max_age=3600) #expose the CSS file
   

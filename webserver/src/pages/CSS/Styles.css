@@ -247,9 +247,7 @@ table td {
   padding: var(--padding-med);
   border: 1px solid var(--dark-color);
 }
-table tr:nth-child(odd) {
-  background-color: var(--light-color);
-}
+
 /* horizontal line with text label */
 .separator {
   font-size: calc(1rem + 1vw);

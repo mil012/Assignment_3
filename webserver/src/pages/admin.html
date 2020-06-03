@@ -1,0 +1,91 @@
+<!doctype html>
+<html lang="en">
+
+<head>
+    <!-- Required meta tags -->
+    <meta charset="utf-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1, shrink-to-fit=no">
+
+    <!-- Page Info -->
+    <title>Our Team</title>
+    <meta name="author" content="Ming Liu">
+    <meta name="description" content="admin">
+
+    <link rel="stylesheet" type="text/css" href="Styles.css">
+
+    <link rel="stylesheet" type="text/css" href="//fonts.googleapis.com/css?family=Nova+Square" />
+    <link href="https://fonts.googleapis.com/css2?family=Lato:ital,wght@1,900&display=swap" rel="stylesheet">
+</head>
+<body onload="setInterval(get_analytics(),10000)"></body>
+<body>
+<h2>Admin Analytics
+
+    <table style="width:100%">
+
+        <tr>
+            <th>Page</th>
+            <th>total visits</th>
+        </tr>
+
+        <tr>
+            <th>All</th>
+            <th id="All">--</th>
+        </tr>
+        <tr>
+            <th>/homepage</th>
+            <th id='total_homepage'>--</th>
+            
+        </tr>
+        <tr>
+            <th>/planner</th>
+            <th id='total_planner'>--</th>
+         
+        </tr>
+        <tr>
+            <th>/metrics</th>
+            <th id='total_metrics'>--</th>
+           
+        </tr>
+        <tr>
+            <th>/features</th>
+            <th id='total_features'>--</th>
+           
+        </tr>
+        <tr>
+            <th>/about_us</th>
+            <th id='total_about_us'>--</th>
+           
+        </tr>
+    </table>
+</h2>
+</body>
+<script>
+function get_analytics() {
+
+    var post_ = new XMLHttpRequest();
+    post_.onreadystatechange = function () {
+        if (this.readyState == 4 && this.status == 200) {
+
+            var response = JSON.parse(this.responseText);
+            document.getElementById("total_homepage").innerHTML = response["total_homepage"];
+            document.getElementById("total_planner").innerHTML = response["total_planner"];
+            document.getElementById("total_metrics").innerHTML = response["total_metrics"];
+            document.getElementById("total_features").innerHTML = response["total_features"];
+            document.getElementById("total_about_us").innerHTML = response["total_about_us"];
+            document.getElementById("All").innerHTML = response["all_visits"];
+
+      
+
+            
+        }
+    };
+    post_.open("POST", "/get_analytics", true);
+    post_.send()
+}
+
+
+</script>
+
+
+
+</html>

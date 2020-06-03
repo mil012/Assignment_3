@@ -1,0 +1,53 @@
+<!doctype html>
+<html lang="en">
+
+<head>
+  <!-- Required meta tags -->
+  <meta charset="utf-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1, shrink-to-fit=no">
+
+  <!-- Page Info -->
+  <title>Our Team</title>
+  <meta name="author" content="Ming Liu">
+  <meta name="description" content="login">
+
+  <link rel="stylesheet" type="text/css" href="Styles.css">
+
+  <link rel="stylesheet" type="text/css" href="//fonts.googleapis.com/css?family=Nova+Square" />
+  <link href="https://fonts.googleapis.com/css2?family=Lato:ital,wght@1,900&display=swap" rel="stylesheet">
+</head>
+
+<body>
+
+    
+  
+      <section class='padding-responsive'>
+  
+        <div class='separator'>Login to Firewatch Website</div>
+  
+        {% if error %}
+        <p> {{ error }} </p>
+        {% endif %}
+  
+        <form method="POST" action="/post_login">
+          <section class='responsive_grid'>
+  
+            <div class='field'>
+              <label> Email Address: &nbsp;</label>
+              <input type='email' name='email' value='' class='margin-top-lg'>
+            </div>
+  
+            <div class='field'>
+              <label> Password: &nbsp;</label>
+              <input type='password' name='password' value='' class='margin-top-lg'>
+            </div>
+          </section>
+  
+          <button class='btn medium pill'> Login </button>
+        </form>
+  
+      </section>
+
+
+
+</body>

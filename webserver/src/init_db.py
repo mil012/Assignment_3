@@ -30,7 +30,7 @@ if __name__ == '__main__':
     # Create a TStudents table (wrapping it in a try-except is good practice)
     try:
         cursor.execute("""
-        CREATE TABLE Users (
+        CREATE TABLE Letters (
         id integer  AUTO_INCREMENT PRIMARY KEY,
         first_name  VARCHAR(30) NOT NULL,
         last_name       VARCHAR(50) NOT NULL,
@@ -39,7 +39,35 @@ if __name__ == '__main__':
         """)
 
     except:
+        print("Letters exists. Not recreating it.")
+
+    try:
+        cursor.execute("""
+        CREATE TABLE Visits (
+        id integer  AUTO_INCREMENT PRIMARY KEY,
+        session  VARCHAR(30) NOT NULL,
+        page       VARCHAR(50) NOT NULL
+        );
+        """)
+
+    except:
+        print("Analytics exists, Not recreating it.")
+
+    try:
+        cursor.execute("""
+        CREATE TABLE Users (
+        id integer  AUTO_INCREMENT PRIMARY KEY,
+        email  VARCHAR(30) NOT NULL,
+        password       VARCHAR(50) NOT NULL
+        );
+        """)
+
+    except:
         print("Users exists. Not recreating it.")
+
+
+
+
     try:
         cursor.execute("""
         CREATE TABLE Coordinates (
@@ -89,6 +117,7 @@ if __name__ == '__main__':
         INSERT INTO News (Date, News)
         VALUE ('May 21, 2020', 'We are close to putting all the components of the project together');""")
         print("ADDED NEWSS SDSDSDSD")
+        
         cursor.execute("""
         INSERT INTO News (Date, News)
         VALUE ('May 20, 2020', "The Hardware progress is almost finished");""")
@@ -110,12 +139,18 @@ if __name__ == '__main__':
     #    print("Failed to add news Not recreating it.")
 
     cursor.execute("""
-        INSERT INTO Users (first_name, last_name, email)
+        INSERT INTO Letters (first_name, last_name, email)
         VALUE ('admin_first','admin_last','admin_email');""")
 
     cursor.execute("""
         INSERT INTO Progress (Frontend, Backend, Hardware, Business)
         VALUE ('75%','60%','80%','50%');""")
+
+    cursor.execute("""
+        INSERT INTO Users (email, password)
+        VALUE ('mil012@ucsd.edu','password');""")
+
+
     db.commit()
     print("done")
     db.close()
